@@ -44,7 +44,7 @@ value_attr="input-value",
 fn=(x)->begin
     x.attrs["true-value"]=true
     x.attrs["false-value"]=false
-    haskey(x.attrs,"value") ? nothing : x.attrs["value"]=false
+    x.attrs["input-value"] = get( x.attrs, "value", false )
 end)
 
 UPDATE_VALIDATION["v-checkbox"]=(
@@ -57,9 +57,8 @@ value_attr="input-value",
 fn=(x)->begin
     x.attrs["true-value"]=true
     x.attrs["false-value"]=false
-    haskey(x.attrs,"value") ? nothing : x.attrs["value"]=false
+    x.attrs["input-value"] = get( x.attrs, "value", false )
 end)
-
 
 UPDATE_VALIDATION["v-chip"]=(
 doc="""Simple Element, value attribute is nothing, when submitted has no value. Can be used with with events,e.g. click (like any other vuetify element)<br>
@@ -313,27 +312,31 @@ fn=(x)->begin
 end)
 
 UPDATE_VALIDATION["v-tabs"]=(
-doc="""Holder Element, helper function is the correct method to use. Accepts array of pairs key is Tab Name value is the content<br>
-    <code>
-    tabs(["Tab1"=>[el1,el2,el3],"Tab2"=>[el4,[el5,el6]]])
-    </code>
+    doc="""Holder Element, helper function is the correct method to use. Accepts array of pairs key is Tab Name value is the content<br>
+        <code>
+        tabs(["Tab1"=>[el1,el2,el3],"Tab2"=>[el4,[el5,el6]]])
+        </code>
     """,
-fn=(x)->begin
+    fn=(x)->begin
+        @assert haskey(x.attrs,"names") "Vuetify tab with no names, please define names array!"
+        @assert x.attrs["names"] isa Array "Vuetify tab names should be an array"
+        @assert length(x.attrs["names"])==length(x.elements) "Vuetify Tabs elements should have the same number of names!"
+    
+        x.render_func=(y;opts=PAGE_OPTIONS)->begin
+            content=[]
 
-    @assert haskey(x.attrs,"names") "Vuetify tab with no names, please define names array!"
-    @assert x.attrs["names"] isa Array "Vuetify tab names should be an array"
-    @assert length(x.attrs["names"])==length(x.elements) "Vuetify Tabs elements should have the same number of names!"
+            for (i,r) in enumerate(y.elements)
+                push!(content,HtmlElement("v-tab",Dict(),nothing,y.attrs["names"][i]))
+                value=r isa Array ? dom(r,opts=opts) : dom([r],opts=opts)
+                push!(content,HtmlElement("v-tab-item",Dict(),12,value))
+            end
 
-    x.render_func=(y;opts=PAGE_OPTIONS)->begin
-       content=[]
-       for (i,r) in enumerate(y.elements)
-           push!(content,HtmlElement("v-tab",Dict(),nothing,y.attrs["names"][i]))
-           value=r isa Array ? VueJS.dom(r,opts=opts) : VueJS.dom([r],opts=opts)
-           push!(content,HtmlElement("v-tab-item",Dict(),12,value))
-       end
-       HtmlElement("v-tabs",y.attrs,12,content)
+            tmpattrs = deepcopy(y.attrs)
+            delete!( tmpattrs, "names" )
+            HtmlElement("v-tabs",tmpattrs,12,content)
+        end
     end
-end)
+)
 
 UPDATE_VALIDATION["v-navigation-drawer"]=(
 doc="",

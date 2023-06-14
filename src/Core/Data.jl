@@ -114,3 +114,12 @@ end
 
 update_data!(vueh::VueHolder,datavalue::Dict)=update_data!(vueh.elements,datavalue)
 
+
+macro vr( vvar::Union{Symbol, AbstractString, Expr} )
+    "{{ $vvar }}"
+end
+
+macro vr( vvar )
+    AssertionError("arg should be (compound) variable name") |> throw
+end
+  

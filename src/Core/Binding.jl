@@ -79,3 +79,7 @@ function element_binds!(el::VueElement;binds=Dict())
         end
     end
 end
+
+element_binds!( vf::VueFor; binds=Dict() ) = element_binds!( vf.value, binds=binds )
+element_binds!( vif::VueIf; binds=Dict() ) = element_binds!( vif.value, binds=binds )
+element_binds!( vc::VueCond; binds=Dict() ) = element_binds!( vc.value, binds=binds )

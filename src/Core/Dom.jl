@@ -93,7 +93,7 @@ end
 
 dom(d;opts=PAGE_OPTIONS,prevent_render_func=false,is_child=false)=d
 dom(d::Dict;opts=PAGE_OPTIONS,prevent_render_func=false,is_child=false)=JSON.json(d)
-dom(r::String;opts=PAGE_OPTIONS,prevent_render_func=false,is_child=false)=HtmlElement("div",Dict(),1,r)
+dom( r::AbstractString; opts=PAGE_OPTIONS, prevent_render_func=false, is_child=false) = String(r)
 function dom(r::HtmlElement;opts=PAGE_OPTIONS,prevent_render_func=false,is_child=false)
    
     if r.value isa Vector
@@ -216,6 +216,8 @@ function activator(items::Vector,dom_ret::VueJS.HtmlElement,act_type::String)
 
     return dom_act
 end
+
+get_cols(v::AbstractString; rows=true ) = 0.0
 
 function get_cols(v::Array;rows=true)
     if rows
@@ -340,32 +342,29 @@ function dom(r::VueJS.VueHolder;opts=PAGE_OPTIONS)
 end
 
 function dom(arr::Array;opts=PAGE_OPTIONS,is_child=false)
-    
-    opts.path=="root" ? opts.path="" : nothing
-    
-    if is_child
-       return dom.(arr,opts=opts,is_child=is_child) 
-    end
+    opts.path == "root" && (opts.path = "")
+    is_child && return dom.( arr, opts=opts, is_child=is_child )
     
     arr_dom=[]
     i_rows=[]
+    
     for (i,rorig) in enumerate(arr)
-
         r=deepcopy(rorig)
 
         ## update grid_data recursively
         append=false
         new_opts=deepcopy(opts)
-        (r isa VueStruct && r.iterable==false) ? append=true : nothing
-        r isa VueStruct ? new_opts.rows=true : nothing
-        r isa Array ? (opts.rows ? new_opts.rows=false : new_opts.rows=true) : nothing
 
-        domvalue=dom(r,opts=new_opts)
+        r isa VueStruct && !r.iterable && (append = true)
+        r isa VueStruct && (new_opts.rows = true)
+        r isa Array && (new_opts.rows = !opts.rows)
+
+        domvalue = dom(r,opts=new_opts)
 
         grid_class=opts.rows ? "v-row" : "v-col"
         
         ## Row with single element (1 column)
-        domvalue=(opts.rows && typeof(r) in [VueHolder,VueElement,HtmlElement,String]) ? HtmlElement("v-col",Dict(),domvalue.cols,domvalue) : domvalue
+        domvalue=(opts.rows && typeof(r) in [VueHolder,VueElement,HtmlElement#=,String=#]) ? HtmlElement("v-col",Dict(),domvalue.cols,domvalue) : domvalue
         
         ### New Element with row/col
         new_el=HtmlElement(grid_class,Dict(),get_cols(domvalue),domvalue)
@@ -376,9 +375,45 @@ function dom(arr::Array;opts=PAGE_OPTIONS,is_child=false)
             push!(arr_dom,new_el)
         end
 
-    push!(i_rows,opts.rows)
+        push!(i_rows,opts.rows)
     end
-    update_cols!(arr_dom,opts=opts)
-    return arr_dom
 
+    update_cols!(arr_dom,opts=opts)
+    arr_dom
 end
+
+
+function dom( vf::VueFor; opts=PAGE_OPTIONS )
+    opts = deepcopy(opts)
+    merge!( opts.style, get( vf.attrs, "style", Dict{Any,Any}() ) )
+    merge!( opts.class, get( vf.attrs, "class", Dict() ) )
+  
+    domvalue = vf.render_func isa Nothing ? dom( vf.value, opts=opts ) :
+      vf.render_func( vf, opts=opts )
+    
+    html( "v-container", domvalue, Dict( "v-for" => "($(vf.itervar), index) in $(vf.listname)", "fluid" => true ), cols=vf.cols )
+end
+  
+  
+function dom( vif::VueIf; opts=PAGE_OPTIONS )
+    domvalue = dom( vif.value, opts=opts )
+    domvalue isa Array && (domvalue = length(domvalue) == 1 ? domvalue[1].value : html( "div", domvalue, cols=0 ))
+    domvalue isa String && (domvalue = html( "span", domvalue, cols=0 ))
+    
+    if vif.condition isa Nothing
+        domvalue.attrs["v-else"] = missing
+    elseif vif.firstcond
+        domvalue.attrs["v-if"] = vif.condition
+    else
+        domvalue.attrs["v-else-if"] = vif.condition
+    end
+  
+    domvalue
+end
+  
+  
+function dom( vc::VueCond; opts=PAGE_OPTIONS )
+    domvalue = dom.( vc.value, opts=opts )
+    html( "span", domvalue, cols=maximum(getfield.( domvalue, :cols )) )
+end
+  

@@ -4,7 +4,7 @@ using JSON,Dates,DataFrames,HTTP,Namtso
 using SHA,Base64
 
 export WebDependency,html,spacer
-export grid,page,@el,@st,@dialog,response,submit,tabs,bar,card,libraries!,toolbar,toolbartitle
+export grid,page,@el,@st,@vr,@dialog,response,submit,tabs,bar,card,libraries!,toolbar,toolbartitle
 export dialog, expansion_panels, VueStruct
 export LIBRARY_RULES
 export get_web_dependencies!
@@ -16,6 +16,8 @@ include("Core/VueElement.jl")
 include("Core/VueHolder.jl")
 include("Core/Events.jl")
 include("Core/VueStruct.jl")
+include("Core/Conditional.jl")
+include("Core/Loops.jl")
 include("Core/SFC.jl")
 include("Core/Binding.jl")
 include("Core/Data.jl")

@@ -103,6 +103,7 @@ var app = new Vue({
                 ## component script
                 update_data!(v,v.data)
                 update_events!(v)
+                merge!(app_state, v.data)
                 merge!(app_state,v.def_data)
                 
                 comp_script=[]

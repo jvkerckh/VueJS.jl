@@ -312,3 +312,11 @@ function trf_vue_expr(expr::String;opts=PAGE_OPTIONS)
     return join(expr_out)
 end
 
+
+merge_class!( class::Dict{String,Any}, newclass::Dict{String,Any} ) =
+    merge!( class, newclass )
+merge_class!( class::Dict{String,Any}, newclass::Vector{String} ) =
+    merge!( class, Dict( cl => "" for cl in newclass ) )
+merge_class!( class::Dict{String,Any}, newclass::Vector{T} ) where T <: AbstractString = merge_class!( class, Vector{String}(newclass) )
+merge_class!( class::Dict{String,Any}, newclass::AbstractString ) =
+    merge_class!( class, filter!( cl -> !isempty(cl), split( newclass, ' ' ) ) )

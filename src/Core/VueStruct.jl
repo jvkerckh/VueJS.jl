@@ -31,8 +31,9 @@ function VueStruct(
     attrs["style"]=deepcopy(PAGE_OPTIONS.style)
     attrs["class"]=deepcopy(PAGE_OPTIONS.class)
     
-    length(style)!=0 ? merge!(attrs["style"],style) : nothing
-    length(class)!=0 ? merge!(attrs["class"],class) : nothing
+    isempty(style) || merge!(attrs["style"],style)
+    isempty(class) || merge_class!( attrs["class"], class )
+    # length(class)!=0 ? merge!(attrs["class"],class) : nothing
     
     new_opts=deepcopy(PAGE_OPTIONS)
     merge!(new_opts.style,attrs["style"])
@@ -58,18 +59,16 @@ function VueStruct(
     
     ## Kwargs only accepts lifecycle hooks
     for (k,v) in kwargs
-        
         @assert string(k) in KNOWN_HOOKS "$k keyword not acceptable"
         @assert v isa String "value of $k should be a String"
-        
         events[string(k)]=v
     end
     
-    iterable==true ? def_data=Vector{Dict{String,Any}}() : nothing
-        comp=VueStruct(id,garr,trf_binds(binds),data,def_data,events,"",nothing,attrs,iterable)
+    iterable && (def_data = Dict{String,Any}[])
+    comp=VueStruct(id,garr,trf_binds(binds),data,def_data,events,"",nothing,attrs,iterable)
     element_binds!(comp,binds=comp.binds)
     
-    return comp
+    comp
 end
 
 macro st(varname,els,args...)
