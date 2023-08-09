@@ -347,7 +347,7 @@ function dom(arr::Array;opts=PAGE_OPTIONS,is_child=false)
     
     arr_dom=[]
     i_rows=[]
-    
+
     for (i,rorig) in enumerate(arr)
         r=deepcopy(rorig)
 
@@ -365,10 +365,23 @@ function dom(arr::Array;opts=PAGE_OPTIONS,is_child=false)
         
         ## Row with single element (1 column)
         domvalue=(opts.rows && typeof(r) in [VueHolder,VueElement,HtmlElement#=,String=#]) ? HtmlElement("v-col",Dict(),domvalue.cols,domvalue) : domvalue
-        
+
         ### New Element with row/col
         new_el=HtmlElement(grid_class,Dict(),get_cols(domvalue),domvalue)
 
+        # New (doesn't work as intended!)
+        if r isa VueIf
+          if isnothing(r.condition)
+            new_el.attrs["v-else"] = missing
+          elseif r.firstcond
+            new_el.attrs["v-if"] = deepcopy(domvalue.attrs["v-if"])
+          else
+            new_el.attrs["v-else-if"] = deepcopy(domvalue.attrs["v-else-if"])
+          end
+  
+          delete!.( Ref(domvalue.attrs), ["v-if", "v-else-if", "v-else"] )
+        end
+  
         if ((i!=1 && i_rows[i-1]) || (opts.rows)) && append
             domvalue isa Vector ? append!(arr_dom, domvalue) : push!(arr_dom, domvalue)
         else
@@ -381,7 +394,7 @@ function dom(arr::Array;opts=PAGE_OPTIONS,is_child=false)
     update_cols!(arr_dom,opts=opts)
     arr_dom
 end
-
+  
 
 function dom( vf::VueFor; opts=PAGE_OPTIONS )
     opts = deepcopy(opts)

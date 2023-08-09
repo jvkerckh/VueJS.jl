@@ -32,8 +32,10 @@ mutable struct VueCond
 end
 
 
-macro vif( varname, condition, value )
+macro vif( varname, value, condition )
   @assert varname isa Symbol "1st arg should be Variable name"
+
+  condition isa Expr && condition.head === :call && condition.args[1] === :eval && (condition = eval(condition))
   @assert condition isa Union{Symbol, AbstractString} "3rd arg should be truthy expression"
 
   value isa Union{AbstractString, Symbol} && (value = "\"$value\"")
@@ -45,8 +47,10 @@ macro vif( varname, condition, value )
 end
 
 
-macro velseif( varname, condition, value )
+macro velseif( varname, value, condition )
   @assert varname isa Symbol "1st arg should be Variable name"
+  
+  condition isa Expr && condition.head === :call && condition.args[1] === :eval && (condition = eval(condition))
   @assert condition isa Union{Symbol, AbstractString} "3rd arg should be truthy expression"
 
   value isa Union{AbstractString, Symbol} && (value = "\"$value\"")
