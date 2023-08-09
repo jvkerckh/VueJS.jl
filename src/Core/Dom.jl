@@ -242,18 +242,21 @@ end
 update_cols!(h::Nothing;context_cols=12,opts=PAGE_OPTIONS)=nothing
 update_cols!(h::String;context_cols=12,opts=PAGE_OPTIONS)=nothing
 update_cols!(h::Array;context_cols=12,opts=PAGE_OPTIONS)=update_cols!.(h,context_cols=context_cols,opts=opts)
-function update_cols!(h::VueJS.HtmlElement;context_cols=12,opts=PAGE_OPTIONS)
+
+function update_cols!(h::HtmlElement;context_cols=12,opts=PAGE_OPTIONS)
 
     if h.tag=="v-row"
-        h.attrs=get(opts.style,h.tag,Dict())
+        # h.attrs=get(opts.style,h.tag,Dict())
+        merge!( h.attrs, get(opts.style,h.tag,Dict()) )  # New
         class=get(opts.class,h.tag,Dict())
         class!=Dict() ? h.attrs["class"]=class : nothing
         update_cols!(h.value,context_cols=context_cols,opts=opts)
     elseif h.tag=="v-col"
-        h.attrs=get(opts.style,h.tag,Dict())
+        # h.attrs=get(opts.style,h.tag,Dict())
+        merge!( h.attrs, get(opts.style,h.tag,Dict()) )  # New
         class=get(opts.class,h.tag,Dict())
         class!=Dict() ? h.attrs["class"]=class : nothing
-        cols=VueJS.get_cols(h.value,rows=false)
+        cols=get_cols(h.value,rows=false)
         viewport=get(opts.style,"viewport","md")
         precise_cols=cols/(context_cols/12)
         cols_dec=precise_cols%1
@@ -270,13 +273,13 @@ function update_cols!(h::VueJS.HtmlElement;context_cols=12,opts=PAGE_OPTIONS)
             end 
         end
         update_cols!(h.value,context_cols=cols,opts=opts)
-    elseif h.value isa VueJS.HtmlElement || h.value isa Array
-        update_cols!(h.value,context_cols=context_cols,opts=opts)
+    elseif h.value isa HtmlElement || h.value isa Array
+      update_cols!(h.value,context_cols=context_cols,opts=opts)
     end
-
+  
     return nothing
-end
-
+  end
+  
 
 function dom(r::VueStruct;opts=PAGE_OPTIONS)
         
