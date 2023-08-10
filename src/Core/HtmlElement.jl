@@ -1,3 +1,4 @@
+export @html
 
 mutable struct HtmlElement
     tag::String
@@ -7,6 +8,48 @@ mutable struct HtmlElement
 end
 
 html(tag::String,value::Union{String,HtmlElement,Array,Nothing},attrs::Dict=Dict();cols=2)=HtmlElement(tag,attrs,cols,value)
+
+
+macro html( varname, tag, value, args... )
+    @assert varname isa Symbol "1st arg should be Variable name"
+    @assert tag isa Union{AbstractString, Symbol} "2nd arg should be tag name"
+
+    treat_html( varname, tag, value, args )
+end
+
+macro html( varname, tag, args... )
+    @assert varname isa Symbol "1st arg should be Variable name"
+    @assert tag isa Union{AbstractString, Symbol} "2nd arg should be tag name"
+
+    treat_html( varname, tag, nothing, args )
+end
+
+
+function treat_html( varname, tag, value, args )
+    ncols = map(args) do arg
+        arg isa Expr || return false
+        arg.head === :(=) || return false
+        arg.args[1] === :cols
+    end |> findfirst
+
+    newargs = treat_kwargs(args)
+
+    if isnothing(ncols)
+        ncols = 2
+    else
+        deleteat!( newargs, ncols )
+        ncols = args[ncols].args[2]
+    end
+
+    newargs="Dict($(join(newargs,",")))"
+
+    value isa AbstractString && (value = "\"$value\"")
+    newexpr = Meta.parse( string( "VueJS.HtmlElement(\"$tag\", $newargs, $ncols, $value)" ) )
+
+    quote
+        $(esc(varname))=$(esc(newexpr))
+    end
+end
 
 
 htmlstring(s::String)=s

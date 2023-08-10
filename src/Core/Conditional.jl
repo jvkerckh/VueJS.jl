@@ -1,4 +1,4 @@
-export @vif, @velseif, @velse, @vc
+export vif, velseif, velse, @vc
 
 
 mutable struct VueIf
@@ -46,31 +46,25 @@ macro vif( varname, value, condition )
   end
 end
 
-
-macro velseif( varname, value, condition )
-  @assert varname isa Symbol "1st arg should be Variable name"
-  
-  condition isa Expr && condition.head === :call && condition.args[1] === :eval && (condition = eval(condition))
-  @assert condition isa Union{Symbol, AbstractString} "3rd arg should be truthy expression"
+function vif( value, condition::Union{Symbol, AbstractString} )
+  @assert condition isa Union{Symbol, AbstractString} "2nd arg should be truthy expression (Symbol or AbstractString)"
 
   value isa Union{AbstractString, Symbol} && (value = "\"$value\"")
-  newexpr = Meta.parse("""VueJS.VueIf( ($value), false, "$condition" )""")
-
-  quote
-    $(esc(varname)) = $(esc(newexpr))
-  end
+  VueIf( value, true, "$condition" )
 end
 
 
-macro velse( varname, value )
-  @assert varname isa Symbol "1st arg should be Variable name"
+function velseif( value, condition::Union{Symbol, AbstractString} )
+  @assert condition isa Union{Symbol, AbstractString} "2nd arg should be truthy expression (Symbol or AbstractString)"
 
   value isa Union{AbstractString, Symbol} && (value = "\"$value\"")
-  newexpr = Meta.parse("""VueJS.VueIf( ($value), false, nothing )""")
+  VueIf( value, false, "$condition" )
+end
 
-  quote
-    $(esc(varname)) = $(esc(newexpr))
-  end
+
+function velse( value )
+  value isa Union{AbstractString, Symbol} && (value = "\"$value\"")
+  VueIf( value, false, nothing )
 end
 
 
